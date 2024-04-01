@@ -1,18 +1,18 @@
 {
   "files": {
     "main.css": "/static/css/main.8552e08c.css",
-    "main.js": "/static/js/main.e3d6aeb3.js",
+    "main.js": "/static/js/main.45f0e106.js",
     "static/js/453.dbaf2f64.chunk.js": "/static/js/453.dbaf2f64.chunk.js",
     "static/media/Mada-Bold.ttf": "/static/media/Mada-Bold.691e78f1d573930c44aa.ttf",
     "static/media/Mada-Black.ttf": "/static/media/Mada-Black.c23e4af58afec296a596.ttf",
     "static/media/Mada-ExtraLight.ttf": "/static/media/Mada-ExtraLight.540f489bc8f45b0d4cd6.ttf",
     "index.html": "/index.html",
     "main.8552e08c.css.map": "/static/css/main.8552e08c.css.map",
-    "main.e3d6aeb3.js.map": "/static/js/main.e3d6aeb3.js.map",
+    "main.45f0e106.js.map": "/static/js/main.45f0e106.js.map",
     "453.dbaf2f64.chunk.js.map": "/static/js/453.dbaf2f64.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.8552e08c.css",
-    "static/js/main.e3d6aeb3.js"
+    "static/js/main.45f0e106.js"
   ]
 }
