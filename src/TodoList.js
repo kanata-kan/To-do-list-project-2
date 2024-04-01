@@ -2,23 +2,38 @@ import Container from "@mui/material/Container";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import TextField from "@mui/material/TextField";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+
 import Todo from "./Todo";
-import { v4 as uuidv4 } from "uuid";
-import { useState, useEffect } from "react";
-import { todosContext } from "./context/todosContext";
-import { useContext } from "react";
+
+import { useState, useEffect, useMemo } from "react";
+import { useToast } from "./context/ToastContext";
+import { useTodos , useThispatch } from "./context/TodosContext";
+
 
 export default function TodoList() {
-  const { todos, setTodos } = useContext(todosContext);
+  const { showHideToast } = useToast();
   const [titleInput, setTitleInput] = useState("");
   const [assessingTasks, setAssessingTasks] = useState("all");
+  const [open, setOpen] = useState(false);
+  const [todoDialog, setTodoDialog] = useState(null);
+  const [UpdateOpen, setUpdateOpen] = useState(false);
+  const todos = useTodos();
+  const thispatch = useThispatch();
 
-  const completedTodo = todos.filter((t) => {
-    return t.isCompleted;
-  });
-  const notCompletedTodo = todos.filter((t) => {
-    return !t.isCompleted;
-  });
+  // Memoized filtering functions
+  const completedTodo = useMemo(() => {
+    return todos.filter((t) => t.isCompleted);
+  }, [todos]);
+
+  const notCompletedTodo = useMemo(() => {
+    return todos.filter((t) => !t.isCompleted);
+  }, [todos]);
+
   let todoIsCompleted = todos;
 
   if (assessingTasks === "completed") {
@@ -27,33 +42,58 @@ export default function TodoList() {
     todoIsCompleted = notCompletedTodo;
   }
 
-  const todosJSX = todoIsCompleted.map((t) => {
-    return <Todo key={t.id} todo={t} />;
-  });
-
-  //============{handle Add Clickd }================//
+  // Handle Add Clicked
   function handleAddClickd() {
-    const newTodo = {
-      id: uuidv4(),
-      title: titleInput,
-      details: "",
-      isCompleted: false,
-    };
-    const todosAdd = [...todos, newTodo];
-    setTodos(todosAdd);
-    localStorage.setItem("key", JSON.stringify(todosAdd));
+    thispatch({ type: "added", payload: { title: titleInput } });
     setTitleInput("");
+    showHideToast("لقد تم اضافه مهمه جديده بنجاح");
   }
+
   // useEffect to load todos from local storage on component mount
   useEffect(() => {
-    const storageEffect = JSON.parse(localStorage.getItem("key"));
-    if (Array.isArray(storageEffect)) {
-      setTodos(storageEffect);
-    } else {
-      setTodos([]);
-    }
-  }, [setTodos]);
-  //============//{handle Add Clickd }//================//
+    thispatch({ type: "get" });
+  }, []);
+
+  // Handle Delete
+  function handleCloseDelete() {
+    setOpen(false);
+  }
+
+  function handleDelete(todo) {
+    setTodoDialog(todo);
+    setOpen(true);
+  }
+
+  function handleDeleteConfirm() {
+    thispatch({ type: "deleted", payload: todoDialog });
+    handleCloseDelete();
+    showHideToast("لقد تم حذف المهمه بنجاح");
+  }
+
+  // Handle Update
+  function handleCloseUpdate() {
+    setUpdateOpen(false);
+  }
+
+  function handleUpdate(todo) {
+    setTodoDialog(todo);
+    setUpdateOpen(true);
+  }
+
+  function handleUpdateConfirm() {
+    thispatch({ type: "updated", payload: todoDialog });
+    setUpdateOpen(false);
+    showHideToast("لقد تم التعديل على المهمه بنجاح");
+  }
+
+  const todosJSX = todoIsCompleted.map((t) => (
+    <Todo
+      key={t.id}
+      todo={t}
+      handleDelete={handleDelete}
+      handleUpdate={handleUpdate}
+    />
+  ));
 
   return (
     <>
@@ -116,7 +156,7 @@ export default function TodoList() {
           <div className="textField">
             <TextField
               label="اضافه مهمه"
-              style={{ width: "75%" , direction : "ltr"}}
+              style={{ width: "75%", direction: "ltr" }}
               placeholder="اكتب مهمة جديدة..."
               value={titleInput}
               onChange={(e) => {
@@ -143,6 +183,62 @@ export default function TodoList() {
           </div>
         </div>
       </Container>
+      {/* Delete Dialog */}
+      <Dialog open={open} onClose={handleCloseDelete}>
+        <DialogTitle>{"هل أنت متأكد أنك تريد حذف هذه المهمة ؟"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            اذا قمت بالموافقه على حذف هذه العمليه فلا يمكنك التراجع عن ذلك
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            style={{ border: "red solid 2px", color: "red" }}
+            onClick={handleDeleteConfirm}
+          >
+            قم بالحذف
+          </Button>
+          <Button onClick={handleCloseDelete} autoFocus>
+            الغاء
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Update Dialog */}
+      <Dialog open={UpdateOpen} onClose={handleCloseUpdate}>
+        <DialogTitle>{"هل أنت متأكد أنك تريد تعديل هذه المهمة ؟"}</DialogTitle>
+        <DialogContent>
+          <TextField
+            style={{ marginTop: "10px" }}
+            label="عنوان المهمه"
+            placeholder="اكتب مهمة جديدة..."
+            value={todoDialog && todoDialog.title}
+            onChange={(e) => {
+              setTodoDialog({ ...todoDialog, title: e.target.value });
+            }}
+          />
+          <br />
+          <TextField
+            style={{ marginTop: "10px" }}
+            label="محتوى مهمه"
+            placeholder="اكتب مهمة جديدة..."
+            value={todoDialog && todoDialog.details}
+            onChange={(e) => {
+              setTodoDialog({ ...todoDialog, details: e.target.value });
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            style={{ border: "green solid 2px", color: "green" }}
+            onClick={handleUpdateConfirm}
+          >
+            تعديل
+          </Button>
+          <Button onClick={handleCloseUpdate} autoFocus>
+            الغاء
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
